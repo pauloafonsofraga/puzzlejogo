@@ -112,9 +112,9 @@ public class Main extends ApplicationAdapter {
                 } else {
                     // tudo o resto é chao
                     cells[y][x] = Cell.FLOOR;
-                    if (c == '.')   goalPositions.add(new Vector2(x, y));  // '.' is goal
-                    if (c == '*')   cratePositions.add(new Vector2(x, y)); // '*' is crate start
-                    if (c == '@')   robotPos = new Vector2(x, y);          // '@' is player start
+                    if (c == '.')   goalPositions.add(new Vector2(x, y));  // '.' é objectivo
+                    if (c == '*')   cratePositions.add(new Vector2(x, y)); // '*' posicao inicial das caixas
+                    if (c == '@')   robotPos = new Vector2(x, y);          // '@' posicao inicial do robot
                 }
             }
         }
