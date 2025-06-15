@@ -1,83 +1,82 @@
 package io.github.pauloafonsofraga.puzzlejogo;
 
-import com.badlogic.gdx.ApplicationAdapter;  // Base class for LibGDX applications
-import com.badlogic.gdx.Gdx;                 // Provides access to the application and its environment
-import com.badlogic.gdx.Input;               // Defines input constants (e.g., keys)
-import com.badlogic.gdx.graphics.GL20;       // Contains OpenGL constants for clearing buffers
-import com.badlogic.gdx.graphics.OrthographicCamera;  // Camera for 2D rendering
-import com.badlogic.gdx.graphics.Texture;    // Represents an image loaded into GPU memory
-import com.badlogic.gdx.graphics.g2d.BitmapFont;  // For drawing text
-import com.badlogic.gdx.graphics.g2d.SpriteBatch; // Batch for efficient sprite rendering
-import com.badlogic.gdx.math.Vector2;        // 2D vector class
-import com.badlogic.gdx.utils.viewport.FitViewport; // Viewport that maintains aspect ratio
-import com.badlogic.gdx.utils.viewport.Viewport;    // Base viewport class
+import com.badlogic.gdx.ApplicationAdapter;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
 
-import java.util.ArrayList;  // Array-backed List implementation
-import java.util.List;       // Interface for ordered collections
+import java.util.ArrayList;
+import java.util.List;
 
 public class Main extends ApplicationAdapter {
-    public static final int TILE_SIZE = 80;  // Pixel size of each tile
+    public static final int TILE_SIZE = 80;  // Tamanho do pixel para cada elemento da grelha
 
-    private SpriteBatch batch;      // Used to draw textures efficiently
-    private Texture wallTex;        // Texture for wall tiles
-    private Texture floorTex;       // Texture for floor tiles
-    private Texture crateTex;       // Texture for crates
-    private Texture robotTex;       // Texture for robot/player
-    private Texture goalTex;        // Texture for goal markers
-    private BitmapFont font;        // Font for drawing "You win!"
+    private SpriteBatch batch;      // Usado para renderizar as texturas
+    private Texture wallTex;        // Textura para parede
+    private Texture floorTex;       // Textura para chao
+    private Texture crateTex;       // Textura para caixa
+    private Texture robotTex;       // Textura para robot
+    private Texture goalTex;        // Textura para objectivo
+    private BitmapFont font;        // Fonte para a mensagem "Ganhaste!"
 
-    private enum Cell { FLOOR, WALL }  // Represents whether a cell is floor or wall
-    private Cell[][] cells;            // 2D array of cells (map layout)
-    private List<Vector2> cratePositions;  // List of crate coordinates
-    private List<Vector2> goalPositions;   // List of goal coordinates
-    private Vector2 robotPos;              // Current robot/player position
-    private int mapWidth, mapHeight;       // Dimensions of the map in tiles
+    private enum Cell { FLOOR, WALL }  // Representa se cada celula é chao ou parede
+    private Cell[][] cells;            // layout das celulas
+    private List<Vector2> cratePositions;  // lista das coordenadas das caixas
+    private List<Vector2> goalPositions;   // lista das coordenadas dos objectivos
+    private Vector2 robotPos;              // actual posicao do robot
+    private int mapWidth, mapHeight;       // dimensao do mapa em celulas
 
-    // Camera and viewport for rendering the world within the window
+    // Camera para renderizar a janela
     private OrthographicCamera camera;
     private Viewport viewport;
 
-    private boolean facingRight = true;  // Tracks which way the robot is facing
+    private boolean facingRight = true;  // analisa se o robot se o robot esta virado para a direita
 
     @Override
     public void create() {
-        // Instantiate the SpriteBatch for drawing sprites
+        // inicia o spritebatch para desenhar os sprites
         batch = new SpriteBatch();
 
-        // Load all textures from the assets folder
+        // vai buscar as textura à pasta assets
         wallTex  = new Texture("wall.png");
         floorTex = new Texture("floor.png");
         crateTex = new Texture("crate.png");
         robotTex = new Texture("robot.png");
         goalTex  = new Texture("goal.png");
 
-        // Create a default BitmapFont for text rendering
+        // cria uma nova fonte para o texto "Ganhaste!"
         font = new BitmapFont();
-        // Scale up the font so that the "You win!" text is readable
+        // escala a fonte para consguirmos ler
         font.getData().setScale(2f);
 
-        // Initialize lists for crates and goals
+        // initaliza as listas para as caixas e objectivos
         cratePositions = new ArrayList<>();
         goalPositions  = new ArrayList<>();
 
-        // Build the level data (cells, crates, goals, robot start)
+        // Constroi o nivel
         loadLevel();
 
-        // Set up camera centered on the world, using a FitViewport to handle resizing
+        // Faz resize ao nivel para caber no ecra
         camera   = new OrthographicCamera();
         viewport = new FitViewport(mapWidth * TILE_SIZE, mapHeight * TILE_SIZE, camera);
-        viewport.apply();  // Apply the viewport configuration
+        viewport.apply();
 
-        // Position camera at the center of the map in world coordinates
+        // Posiciona a camera no centro do nivel
         camera.position.set(mapWidth * TILE_SIZE / 2f, mapHeight * TILE_SIZE / 2f, 0);
-        camera.update();   // Update camera matrices
+        camera.update();
 
-        // Tell the batch to use the camera's combined projection & view matrices
         batch.setProjectionMatrix(camera.combined);
     }
 
     private void loadLevel() {
-        // Raw ASCII layout for the original DOS Sokoban level 1 (26 cols by 11 rows)
+        // Layout em ASCII do primeiro nivel do jogo Sokoban
         String[] raw = {
             "        XXXXX           ",
             "        X   X           ",
@@ -92,27 +91,26 @@ public class Main extends ApplicationAdapter {
             "        XXXXXXXX        "
         };
 
-        // Number of rows in the map
+        // Numero de linhas no mapa
         mapHeight = raw.length;
-        // Determine the maximum width among all rows
+        // Determina a largura maxima das linhas
         for (String row : raw) {
             mapWidth = Math.max(mapWidth, row.length());
         }
-        // Allocate the cells array using the computed dimensions
+        // Faz o array das celulas tendo em conta as dimensoes calculadas
         cells = new Cell[mapHeight][mapWidth];
 
-        // Populate the cells, cratePositions, goalPositions, and robotPos
+        // preenche as celulas, cratePositions, goalPositions, e robotPos
         for (int y = 0; y < mapHeight; y++) {
-            // Invert y so that row 0 is bottom of the screen
+            // inverte y para a linha 0 estar no fundo do ecra
             String row = raw[mapHeight - 1 - y];
             for (int x = 0; x < mapWidth; x++) {
-                // Get the character or blank if beyond string length
                 char c = x < row.length() ? row.charAt(x) : ' ';
                 if (c == 'X') {
-                    // 'X' denotes a wall
+                    // 'X' representa uma parede
                     cells[y][x] = Cell.WALL;
                 } else {
-                    // Everything else is floor
+                    // tudo o resto é chao
                     cells[y][x] = Cell.FLOOR;
                     if (c == '.')   goalPositions.add(new Vector2(x, y));  // '.' is goal
                     if (c == '*')   cratePositions.add(new Vector2(x, y)); // '*' is crate start
@@ -124,62 +122,62 @@ public class Main extends ApplicationAdapter {
 
     @Override
     public void resize(int width, int height) {
-        // When the window is resized, update the viewport to maintain aspect
+        // Faz update ao viewport quando a janela muda de tamanho
         viewport.update(width, height);
     }
 
     @Override
     public void render() {
-        // Handle keyboard input for movement & orientation
+        // input do keyboard para movimento do robot
         handleInput();
 
-        // Clear the screen to black before drawing
+        //  Limpa o ecra antes de comecar o render
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         batch.begin();
 
-        // Draw the map: floors, walls, and goals
+        // Desehha o mapa: chao, paredes e objectivos
         for (int y = 0; y < mapHeight; y++) {
             for (int x = 0; x < mapWidth; x++) {
-                // Choose wall or floor texture
+
                 Texture tex = (cells[y][x] == Cell.WALL) ? wallTex : floorTex;
-                // Draw the tile at the correct world position
+
                 batch.draw(tex, x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                // If there's a goal here, overlay it
+                // Se nesta posicao tem um objectivo faz um overlay
                 if (goalPositions.contains(new Vector2(x, y))) {
                     batch.draw(goalTex, x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
                 }
             }
         }
 
-        // Draw each crate at its current position
+        // Desenha cada caixa na posicao certa
         for (Vector2 crate : cratePositions) {
             batch.draw(crateTex, crate.x * TILE_SIZE, crate.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
         }
 
-        // Draw the robot/player, flipping if facing left
+        // Desenha o robot
         float rx = robotPos.x * TILE_SIZE;
         float ry = robotPos.y * TILE_SIZE;
         if (facingRight) {
-            // Normal draw: facing right
+            // Textura normal, nada muda
             batch.draw(robotTex, rx, ry, TILE_SIZE, TILE_SIZE);
         } else {
-            // Flipped draw: offset x by TILE_SIZE and draw negative width
+            // Vira a textura ao contrario
             batch.draw(robotTex, rx + TILE_SIZE, ry, -TILE_SIZE, TILE_SIZE);
         }
 
-        // If all crates are on goals, display a win message
+        // Se todas as caixas estao nos objectivos imprime a mensagem de vitoria
         if (isWin()) {
             font.draw(batch,
-                "You win!",
-                (mapWidth * TILE_SIZE) / 2f - 80,
-                (mapHeight * TILE_SIZE) / 2f + 20);
+                "Ganhaste!",
+                (mapWidth * TILE_SIZE) / 2f - 160,
+                (mapHeight * TILE_SIZE) / 2f + 40);
         }
 
-        batch.end();  // Finish the drawing batch
+        batch.end();  // Batch para renderizar termina
     }
 
     private void handleInput() {
-        // On arrow key presses, attempt to move and update facing
+        // Movimento quando se carrega nas setas do teclado
         if (Gdx.input.isKeyJustPressed(Input.Keys.UP))    tryMove(0,  1);
         if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN))  tryMove(0, -1);
         if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT))  tryMove(-1,  0);
@@ -187,66 +185,57 @@ public class Main extends ApplicationAdapter {
     }
 
     private void tryMove(int dx, int dy) {
-        // Update facing direction based on horizontal movement
-        if (dx < 0) facingRight = false;  // moving left
-        if (dx > 0) facingRight = true;   // moving right
+        // actualiza a taxtura para movimento horizontal
+        if (dx < 0) facingRight = false;  // a mover-se para a esquerda
+        if (dx > 0) facingRight = true;   // a mover-se para a direita
 
-        // Calculate target cell for robot
+        // Calcula a celula para onde se vai mover o robot
         Vector2 next = new Vector2(robotPos.x + dx, robotPos.y + dy);
-        if (isBlocked(next)) return;  // can't move into walls or out of bounds
+        if (isBlocked(next)) return;  // o robot nao pode passar paredes
 
-        // Check if a crate occupies the target cell
+        // Verifica se a caixa ocupa uma celula de objectivo
         Vector2 hit = findCrateAt(next);
         if (hit != null) {
-            // Attempt to push the crate one more cell in same direction
+            // Tenta empurrar a caixa para a celula seguinte
             Vector2 after = new Vector2(hit.x + dx, hit.y + dy);
-            // If that cell is blocked or occupied by another crate, abort
+            // se a celula esta bloqueada ou ocupada por outra caixa, o movimento para
             if (isBlocked(after) || findCrateAt(after) != null) return;
-            // Otherwise move the crate
+            // senao a caixa move
             hit.set(after);
         }
 
-        // Finally update the robot position
+        // actualiza a posicao do robot
         robotPos.set(next);
     }
 
     private boolean isBlocked(Vector2 pos) {
         int x = (int) pos.x, y = (int) pos.y;
-        // Out of map bounds is blocked
+        // bloqueia nas fronteiras do mapa
         if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) return true;
-        // Walls are blocked
+        // bloqueia nas paredes
         return cells[y][x] == Cell.WALL;
     }
 
     private Vector2 findCrateAt(Vector2 pos) {
-        // Check each crate for a match at the given position
+
         for (Vector2 c : cratePositions) {
             if (c.epsilonEquals(pos, 0f)) return c;
         }
-        return null;  // no crate found
+        return null;
     }
 
     private boolean isWin() {
-        // Verify every goal position has a crate on it
+        // verifica se todos os objectivos estao com uma caixa
         for (Vector2 g : goalPositions) {
             boolean covered = false;
             for (Vector2 c : cratePositions) {
                 if (c.epsilonEquals(g, 0.1f)) { covered = true; break; }
             }
-            if (!covered) return false;  // if any goal is empty, not a win
+            if (!covered) return false;  // se algum dos objectivos nao tem caixa, nao deixa ganhar
         }
-        return true;  // all goals covered
+        return true;  // todos os objectivos estao cumpridos
     }
 
-    @Override
-    public void dispose() {
-        // Clean up resources when the application exits
-        batch.dispose();
-        wallTex.dispose();
-        floorTex.dispose();
-        crateTex.dispose();
-        robotTex.dispose();
-        goalTex.dispose();
-        font.dispose();
-    }
+
+
 }
